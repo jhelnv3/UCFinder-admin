@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UCFinder Admin · Edit User</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <a href="dashboard.html" class="brand"><span class="brand-dot"></span>UCFinder Admin</a>
+            <div class="topbar-right">
+                <div class="admin-menu" id="adminMenu">
+                    <button class="admin-chip" id="adminMenuToggle" type="button">
+                        <span class="chip-text">
+                            <span class="name" id="adminName">…</span>
+                            <span class="id" id="adminId"></span>
+                        </span>
+                        <span class="caret">▾</span>
+                    </button>
+                    <div class="admin-dropdown" id="adminMenuDropdown">
+                        <div class="dropdown-meta">
+                            <div class="meta-name" id="adminMetaName">…</div>
+                            <div class="meta-id" id="adminMetaId"></div>
+                        </div>
+                        <a class="dropdown-item" href="#" id="editAccountLink">
+                            <span class="item-icon">✎</span> Edit Account
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item danger" id="logoutBtn">
+                            <span class="item-icon">⏻</span> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <a class="back-link" href="users.html">← Back to Users</a>
+
+            <h1 class="page-title" id="pageTitle">Edit User</h1>
+            <p class="page-sub" id="pageSubtitle">Loading…</p>
+
+            <form class="form-card" id="userForm">
+                <h2 class="section-heading">Account Information</h2>
+
+                <div class="form-row">
+                    <label for="fullname">Full Name</label>
+                    <input id="fullname" type="text">
+                </div>
+                <div class="form-row">
+                    <label for="idnum">ID Number</label>
+                    <input id="idnum" type="text" inputmode="numeric" maxlength="8">
+                </div>
+                <div class="form-row">
+                    <label for="email">Email Address</label>
+                    <input id="email" type="email">
+                </div>
+
+                <h2 class="section-heading">Role &amp; Academic Information</h2>
+
+                <div class="form-row">
+                    <label for="role">Role</label>
+                    <select id="role">
+                        <option value="student">Student</option>
+                        <option value="faculty">Faculty</option>
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label for="course">Course Program</label>
+                    <input id="course" type="text">
+                </div>
+                <div class="form-row">
+                    <label for="department">Department</label>
+                    <input id="department" type="text">
+                </div>
+
+                <h2 class="section-heading">System Information</h2>
+
+                <div class="form-row">
+                    <label for="is-admin">Admin</label>
+                    <div class="toggle-row">
+                        <label class="switch" id="adminSwitchWrap">
+                            <input id="is-admin" type="checkbox">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="toggle-state" id="is-admin-state">No</span>
+                        <span class="toggle-lock-note" id="adminLockNote" style="display:none;">
+                            🔒 You can't remove your own admin access.
+                        </span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label>Created At</label>
+                    <div class="value" id="createdAt">—</div>
+                </div>
+                <div class="form-row">
+                    <label>Last Active</label>
+                    <div class="value" id="lastActive">—</div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="saveBtn">Save Changes</button>
+                    <a class="btn btn-outline" href="users.html">Cancel</a>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <style>
+        /* Locked toggle appearance */
+        .switch input:disabled + .slider {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+        .switch input:disabled + .slider::before {
+            box-shadow: none;
+        }
+        .toggle-lock-note {
+            font-size: 12px;
+            color: #808080;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+    </style>
+
+    <script src="/__/firebase/10.8.0/firebase-app-compat.js"></script>
+    <script src="/__/firebase/10.8.0/firebase-auth-compat.js"></script>
+    <script src="/__/firebase/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="/__/firebase/init.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dropdown.js"></script>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const userId = params.get('id');
+        const isCreate = !userId;
+
+        // Will be set once we know whether this is the logged-in admin's own doc.
+        let isEditingSelf = false;
+
+        const adminToggle = document.getElementById('is-admin');
+        const adminState = document.getElementById('is-admin-state');
+        const adminLockNote = document.getElementById('adminLockNote');
+
+        function refreshAdminLabel() {
+            adminState.textContent = adminToggle.checked ? 'Yes' : 'No';
+            adminState.classList.toggle('on', adminToggle.checked);
+        }
+        adminToggle.addEventListener('change', refreshAdminLabel);
+
+        function formatDate(value) {
+            if (!value) return '—';
+            if (typeof value.toDate === 'function') {
+                return value.toDate().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'medium' });
+            }
+            try { return new Date(value).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'medium' }); }
+            catch { return String(value); }
+        }
+
+        function escape(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        window.requireAdmin(async (user, adminDocId, adminData) => {
+            // Admin chip
+            document.getElementById('adminName').textContent = adminData.name || user.email;
+            document.getElementById('adminId').textContent = adminData.id_number ? `ID ${adminData.id_number}` : '';
+            document.getElementById('adminMetaName').textContent = adminData.name || user.email;
+            document.getElementById('adminMetaId').textContent =
+                `${adminData.id_number ? 'ID ' + adminData.id_number : ''}${adminData.role ? ' · ' + adminData.role : ''}`;
+            document.getElementById('editAccountLink').href = `user-edit.html?id=${adminDocId}`;
+
+            // ---- Determine if we're editing the currently logged-in admin's own doc ----
+            isEditingSelf = !isCreate && userId === adminDocId;
+
+            if (isCreate) {
+                document.getElementById('pageTitle').textContent = 'Add User';
+                document.getElementById('pageSubtitle').textContent = 'Create a new user account.';
+                document.getElementById('createdAt').textContent = '(set on save)';
+                document.getElementById('lastActive').textContent = '(set on save)';
+                refreshAdminLabel();
+                return;
+            }
+
+            const doc = await db.collection('users').doc(userId).get();
+            if (!doc.exists) {
+                document.getElementById('pageSubtitle').textContent = 'User not found.';
+                return;
+            }
+            const d = doc.data();
+
+            document.getElementById('pageSubtitle').innerHTML =
+                `<strong>${escape(d.name)}</strong> · ID ${escape(d.id_number)} · Role: ${escape(d.role)}`;
+
+            document.getElementById('fullname').value = d.name || '';
+            document.getElementById('idnum').value = d.id_number || '';
+            document.getElementById('email').value = d.email || '';
+            document.getElementById('role').value = d.role || 'student';
+            document.getElementById('course').value = d.course_program || '';
+            document.getElementById('department').value = d.department || '';
+            adminToggle.checked = !!d.is_admin;
+            refreshAdminLabel();
+
+            document.getElementById('createdAt').textContent = formatDate(d.created_at);
+            document.getElementById('lastActive').textContent = formatDate(d.last_active);
+
+            // ---- Lock the Admin toggle when editing yourself ----
+            if (isEditingSelf) {
+                adminToggle.disabled = true;
+                adminLockNote.style.display = 'inline';
+
+                // If for some reason the doc doesn't already have is_admin = true
+                // (shouldn't happen because requireAdmin passed), force it visually
+                // so the label reflects the safe state.
+                if (!adminToggle.checked) {
+                    adminToggle.checked = true;
+                    refreshAdminLabel();
+                }
+            }
+        });
+
+        document.getElementById('userForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const payload = {
+                name: document.getElementById('fullname').value.trim(),
+                id_number: document.getElementById('idnum').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                role: document.getElementById('role').value,
+                course_program: document.getElementById('course').value.trim(),
+                department: document.getElementById('department').value.trim(),
+                last_active: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            // ---- Never include is_admin when editing yourself ----
+            // This protects against a bad actor re-enabling the disabled toggle
+            // via devtools, or against a form reset.
+            if (!isEditingSelf) {
+                payload.is_admin = adminToggle.checked;
+            }
+
+            try {
+                if (isCreate) {
+                    payload.created_at = firebase.firestore.FieldValue.serverTimestamp();
+                    await db.collection('users').add(payload);
+                } else {
+                    await db.collection('users').doc(userId).update(payload);
+                }
+                window.location.href = 'users.html';
+            } catch (err) {
+                alert('Save failed: ' + err.message);
+            }
+        });
+    </script>
+</body>
+</html>

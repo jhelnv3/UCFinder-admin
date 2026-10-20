@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UCFinder Admin · Sign In</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="login-wrap">
+        <div class="login-card">
+            <div class="login-logo">
+                <span class="login-logo-dot"></span>
+                UCFinder Admin
+            </div>
+            <h1 class="login-title">Sign in</h1>
+            <p class="login-sub">Enter your admin credentials to continue.</p>
+
+            <form id="loginForm">
+                <div class="field">
+                    <label for="email">Email Address</label>
+                    <input id="email" type="email" placeholder="you@uc.edu" autocomplete="email">
+                </div>
+
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input id="password" type="password" placeholder="Enter your password" autocomplete="current-password">
+                </div>
+
+                <p id="loginError" class="login-error" style="display:none"></p>
+
+                <button type="submit" class="login-btn">Log In</button>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .login-error { color: #c8503a; font-size: 14px; font-weight: 600; margin-top: 10px; }
+    </style>
+
+    <script src="/__/firebase/10.8.0/firebase-app-compat.js"></script>
+    <script src="/__/firebase/10.8.0/firebase-auth-compat.js"></script>
+    <script src="/__/firebase/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="/__/firebase/init.js"></script>
+
+    <script>
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const form = document.getElementById('loginForm');
+        const errEl = document.getElementById('loginError');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errEl.style.display = 'none';
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            try {
+                const cred = await auth.signInWithEmailAndPassword(email, password);
+
+                // Confirm the user is an admin (is_admin == true in Firestore).
+                const snap = await db.collection('users')
+                    .where('email', '==', cred.user.email)
+                    .where('is_admin', '==', true)
+                    .limit(1)
+                    .get();
+
+                if (snap.empty) {
+                    await auth.signOut();
+                    errEl.textContent = 'This account is not an administrator.';
+                    errEl.style.display = 'block';
+                    return;
+                }
+
+                window.location.href = 'dashboard.html';
+            } catch (err) {
+                errEl.textContent = err.message.replace('Firebase: ', '');
+                errEl.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

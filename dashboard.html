@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UCFinder Admin · Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <a href="dashboard.html" class="brand"><span class="brand-dot"></span>UCFinder Admin</a>
+
+            <div class="topbar-right">
+                <div class="admin-menu" id="adminMenu">
+                    <button class="admin-chip" id="adminMenuToggle" type="button">
+                        <span class="chip-text">
+                            <span class="name" id="adminName">Loading…</span>
+                            <span class="id" id="adminId">—</span>
+                        </span>
+                        <span class="caret">▾</span>
+                    </button>
+
+                    <div class="admin-dropdown" id="adminMenuDropdown">
+                        <div class="dropdown-meta">
+                            <div class="meta-name" id="adminMetaName">Loading…</div>
+                            <div class="meta-id" id="adminMetaId">—</div>
+                        </div>
+                        <a class="dropdown-item" href="#" id="editAccountLink">
+                            <span class="item-icon">✎</span> Edit Account
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item danger" id="logoutBtn">
+                            <span class="item-icon">⏻</span> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <h1 class="page-title" id="welcomeTitle">Welcome back</h1>
+            <p class="page-sub">Manage users and rooms from one place.</p>
+
+            <div class="dash-grid">
+                <a class="dash-card" href="users.html">
+                    <div class="icon">U</div>
+                    <div>
+                        <h3>Manage Users</h3>
+                        <p>Add, edit, or remove user records.</p>
+                    </div>
+                </a>
+
+                <a class="dash-card" href="rooms.html">
+                    <div class="icon">R</div>
+                    <div>
+                        <h3>Manage Rooms</h3>
+                        <p>Edit room names and locations.</p>
+                    </div>
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <script src="/__/firebase/10.8.0/firebase-app-compat.js"></script>
+    <script src="/__/firebase/10.8.0/firebase-auth-compat.js"></script>
+    <script src="/__/firebase/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="/__/firebase/init.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dropdown.js"></script>
+
+    <script>
+        window.requireAdmin(async (user, docId, data) => {
+            const displayName = data.name || user.email;
+            const idText = data.id_number ? `ID ${data.id_number}` : '';
+            const roleText = data.role ? ` · ${data.role}` : '';
+
+            document.getElementById('adminName').textContent = displayName;
+            document.getElementById('adminId').textContent = idText;
+            document.getElementById('adminMetaName').textContent = displayName;
+            document.getElementById('adminMetaId').textContent = `${idText}${roleText}`;
+            document.getElementById('welcomeTitle').textContent = `Welcome back, ${displayName}`;
+            document.getElementById('editAccountLink').href = `user-edit.html?id=${docId}`;
+        });
+    </script>
+</body>
+</html>

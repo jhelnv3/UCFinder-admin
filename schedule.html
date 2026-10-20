@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UCFinder Admin · Schedule</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <a href="dashboard.html" class="brand"><span class="brand-dot"></span>UCFinder Admin</a>
+            <div class="topbar-right">
+                <div class="admin-menu" id="adminMenu">
+                    <button class="admin-chip" id="adminMenuToggle" type="button">
+                        <span class="chip-text">
+                            <span class="name" id="adminName">…</span>
+                            <span class="id" id="adminId"></span>
+                        </span>
+                        <span class="caret">▾</span>
+                    </button>
+                    <div class="admin-dropdown" id="adminMenuDropdown">
+                        <div class="dropdown-meta">
+                            <div class="meta-name" id="adminMetaName">…</div>
+                            <div class="meta-id" id="adminMetaId"></div>
+                        </div>
+                        <a class="dropdown-item" href="#" id="editAccountLink">
+                            <span class="item-icon">✎</span> Edit Account
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item danger" id="logoutBtn">
+                            <span class="item-icon">⏻</span> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <a class="back-link" href="users.html">← Back to Users</a>
+            <h1 class="page-title">Weekly Schedule</h1>
+            <p class="page-sub">Coming soon — schedules will be wired to Firestore once the collection is set up.</p>
+        </main>
+    </div>
+
+    <script src="/__/firebase/10.8.0/firebase-app-compat.js"></script>
+    <script src="/__/firebase/10.8.0/firebase-auth-compat.js"></script>
+    <script src="/__/firebase/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="/__/firebase/init.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dropdown.js"></script>
+
+    <script>
+        window.requireAdmin(async (user, docId, data) => {
+            document.getElementById('adminName').textContent = data.name || user.email;
+            document.getElementById('adminId').textContent = data.id_number ? `ID ${data.id_number}` : '';
+            document.getElementById('adminMetaName').textContent = data.name || user.email;
+            document.getElementById('adminMetaId').textContent =
+                `${data.id_number ? 'ID ' + data.id_number : ''}${data.role ? ' · ' + data.role : ''}`;
+            document.getElementById('editAccountLink').href = `user-edit.html?id=${docId}`;
+        });
+    </script>
+</body>
+</html>

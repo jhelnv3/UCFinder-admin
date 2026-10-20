@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UCFinder Admin · Users</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <a href="dashboard.html" class="brand"><span class="brand-dot"></span>UCFinder Admin</a>
+
+            <div class="topbar-right">
+                <div class="admin-menu" id="adminMenu">
+                    <button class="admin-chip" id="adminMenuToggle" type="button">
+                        <span class="chip-text">
+                            <span class="name" id="adminName">…</span>
+                            <span class="id" id="adminId"></span>
+                        </span>
+                        <span class="caret">▾</span>
+                    </button>
+                    <div class="admin-dropdown" id="adminMenuDropdown">
+                        <div class="dropdown-meta">
+                            <div class="meta-name" id="adminMetaName">…</div>
+                            <div class="meta-id" id="adminMetaId"></div>
+                        </div>
+                        <a class="dropdown-item" href="#" id="editAccountLink">
+                            <span class="item-icon">✎</span> Edit Account
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item danger" id="logoutBtn">
+                            <span class="item-icon">⏻</span> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
+
+            <h1 class="page-title">Manage Users</h1>
+            <p class="page-sub" id="userCount">Loading users…</p>
+
+            <div class="list-header">
+                <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input id="searchInput" type="text" placeholder="Search by name, ID, or email...">
+                </div>
+                <a class="btn btn-primary" href="user-edit.html">+ Add User</a>
+            </div>
+
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Fullname</th>
+                            <th>Email Address</th>
+                            <th>Role</th>
+                            <th>Admin</th>
+                            <th>Course</th>
+                            <th>Department</th>
+                            <th style="width:90px">Edit</th>
+                            <th style="width:90px">Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <tr><td colspan="9" style="text-align:center;padding:30px;color:#808080">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="/__/firebase/10.8.0/firebase-app-compat.js"></script>
+    <script src="/__/firebase/10.8.0/firebase-auth-compat.js"></script>
+    <script src="/__/firebase/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="/__/firebase/init.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dropdown.js"></script>
+
+    <script>
+        let allUsers = [];
+        const tbody = document.getElementById('userTableBody');
+        const searchInput = document.getElementById('searchInput');
+
+        window.requireAdmin(async (user, docId, data) => {
+            // Admin chip
+            document.getElementById('adminName').textContent = data.name || user.email;
+            document.getElementById('adminId').textContent = data.id_number ? `ID ${data.id_number}` : '';
+            document.getElementById('adminMetaName').textContent = data.name || user.email;
+            document.getElementById('adminMetaId').textContent =
+                `${data.id_number ? 'ID ' + data.id_number : ''}${data.role ? ' · ' + data.role : ''}`;
+            document.getElementById('editAccountLink').href = `user-edit.html?id=${docId}`;
+
+            // User list
+            const snap = await db.collection('users').get();
+            allUsers = snap.docs.map(doc => ({ _id: doc.id, ...doc.data() }));
+            document.getElementById('userCount').textContent = `${allUsers.length} users registered`;
+            renderTable(allUsers);
+        });
+
+        function renderTable(list) {
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:#808080">No users found</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = list.map(u => `
+                <tr>
+                    <td class="user-id">${escape(u.id_number || '—')}</td>
+                    <td><a class="user-name-link" href="user-edit.html?id=${u._id}">${escape(u.name || '(unnamed)')}</a></td>
+                    <td>${escape(u.email || '—')}</td>
+                    <td>${escape(u.role || '—')}</td>
+                    <td><span class="pill ${u.is_admin ? 'pill-on' : 'pill-off'}">${u.is_admin ? 'Yes' : 'No'}</span></td>
+                    <td>${escape(u.course_program || '—')}</td>
+                    <td>${escape(u.department || '—')}</td>
+                    <td><a class="icon-btn edit" href="user-edit.html?id=${u._id}">✎</a></td>
+                    <td><button class="icon-btn delete" data-id="${u._id}">✕</button></td>
+                </tr>
+            `).join('');
+
+            tbody.querySelectorAll('.icon-btn.delete').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.dataset.id;
+                    if (!confirm('Delete this user? This cannot be undone.')) return;
+                    try {
+                        await db.collection('users').doc(id).delete();
+                        allUsers = allUsers.filter(u => u._id !== id);
+                        document.getElementById('userCount').textContent = `${allUsers.length} users registered`;
+                        renderTable(allUsers);
+                    } catch (err) {
+                        alert('Delete failed: ' + err.message);
+                    }
+                });
+            });
+        }
+
+        searchInput.addEventListener('input', () => {
+            const q = searchInput.value.trim().toLowerCase();
+            if (!q) { renderTable(allUsers); return; }
+            renderTable(allUsers.filter(u =>
+                (u.name || '').toLowerCase().includes(q) ||
+                (u.id_number || '').toLowerCase().includes(q) ||
+                (u.email || '').toLowerCase().includes(q)
+            ));
+        });
+
+        function escape(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+    </script>
+</body>
+</html>

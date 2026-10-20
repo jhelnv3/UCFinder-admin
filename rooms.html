@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UCFinder Admin · Rooms</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <a href="dashboard.html" class="brand"><span class="brand-dot"></span>UCFinder Admin</a>
+            <div class="topbar-right">
+                <div class="admin-menu" id="adminMenu">
+                    <button class="admin-chip" id="adminMenuToggle" type="button">
+                        <span class="chip-text">
+                            <span class="name" id="adminName">…</span>
+                            <span class="id" id="adminId"></span>
+                        </span>
+                        <span class="caret">▾</span>
+                    </button>
+                    <div class="admin-dropdown" id="adminMenuDropdown">
+                        <div class="dropdown-meta">
+                            <div class="meta-name" id="adminMetaName">…</div>
+                            <div class="meta-id" id="adminMetaId"></div>
+                        </div>
+                        <a class="dropdown-item" href="#" id="editAccountLink">
+                            <span class="item-icon">✎</span> Edit Account
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item danger" id="logoutBtn">
+                            <span class="item-icon">⏻</span> Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
+
+            <h1 class="page-title">Manage Rooms</h1>
+            <p class="page-sub" id="roomCount">Loading rooms…</p>
+
+            <div class="list-header">
+                <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input id="searchInput" type="text" placeholder="Search rooms...">
+                </div>
+            </div>
+
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Room ID</th>
+                            <th>Display Name</th>
+                            <th>Description</th>
+                            <th style="width:200px">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="roomTableBody">
+                        <tr><td colspan="4" style="text-align:center;padding:30px;color:#808080">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="/__/firebase/10.8.0/firebase-app-compat.js"></script>
+    <script src="/__/firebase/10.8.0/firebase-auth-compat.js"></script>
+    <script src="/__/firebase/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="/__/firebase/init.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dropdown.js"></script>
+
+    <script>
+        let allRooms = [];
+        const tbody = document.getElementById('roomTableBody');
+        const searchInput = document.getElementById('searchInput');
+
+        window.requireAdmin(async (user, docId, data) => {
+            // Admin chip
+            document.getElementById('adminName').textContent = data.name || user.email;
+            document.getElementById('adminId').textContent = data.id_number ? `ID ${data.id_number}` : '';
+            document.getElementById('adminMetaName').textContent = data.name || user.email;
+            document.getElementById('adminMetaId').textContent =
+                `${data.id_number ? 'ID ' + data.id_number : ''}${data.role ? ' · ' + data.role : ''}`;
+            document.getElementById('editAccountLink').href = `user-edit.html?id=${docId}`;
+
+            const snap = await db.collection('rooms').get();
+            allRooms = snap.docs.map(doc => ({ _id: doc.id, ...doc.data() }));
+            document.getElementById('roomCount').textContent = `${allRooms.length} rooms`;
+            renderTable(allRooms);
+        });
+
+        function escape(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        function renderTable(list) {
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:30px;color:#808080">No rooms found</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = list.map(r => `
+                <tr data-id="${r._id}">
+                    <td class="room-id">${escape(r._id)}</td>
+                    <td class="room-name-cell">
+                        <span class="room-name-text">${escape(r.display_name || '')}</span>
+                        <input class="room-name-input" type="text" value="${escape(r.display_name || '')}" hidden>
+                    </td>
+                    <td class="room-desc-cell">
+                        <span class="room-name-text">${escape(r.description || '')}</span>
+                        <input class="room-name-input" type="text" value="${escape(r.description || '')}" hidden>
+                    </td>
+                    <td class="row-actions">
+                        <button class="btn btn-sm btn-yellow room-edit-btn">Edit</button>
+                        <button class="btn btn-sm btn-primary room-save-btn" hidden>Save</button>
+                        <button class="btn btn-sm btn-outline room-cancel-btn" hidden>Cancel</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            tbody.querySelectorAll('tr[data-id]').forEach(row => wireRow(row));
+        }
+
+        function wireRow(row) {
+            const id = row.dataset.id;
+            const editBtn = row.querySelector('.room-edit-btn');
+            const saveBtn = row.querySelector('.room-save-btn');
+            const cancelBtn = row.querySelector('.room-cancel-btn');
+            const texts = row.querySelectorAll('.room-name-text');
+            const inputs = row.querySelectorAll('.room-name-input');
+            const original = Array.from(inputs).map(i => i.value);
+
+            editBtn.addEventListener('click', () => {
+                texts.forEach(t => t.hidden = true);
+                inputs.forEach(i => i.hidden = false);
+                editBtn.hidden = true;
+                saveBtn.hidden = false;
+                cancelBtn.hidden = false;
+                inputs[0].focus();
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                inputs.forEach((i, idx) => i.value = original[idx]);
+                exit();
+            });
+
+            saveBtn.addEventListener('click', async () => {
+                const newName = inputs[0].value.trim();
+                const newDesc = inputs[1].value.trim();
+
+                try {
+                    await db.collection('rooms').doc(id).update({
+                        display_name: newName,
+                        description: newDesc
+                    });
+
+                    texts[0].textContent = newName;
+                    texts[1].textContent = newDesc;
+                    original[0] = newName;
+                    original[1] = newDesc;
+
+                    const cached = allRooms.find(r => r._id === id);
+                    if (cached) {
+                        cached.display_name = newName;
+                        cached.description = newDesc;
+                    }
+                } catch (err) {
+                    alert('Save failed: ' + err.message);
+                }
+
+                exit();
+            });
+
+            function exit() {
+                inputs.forEach(i => i.hidden = true);
+                texts.forEach(t => t.hidden = false);
+                editBtn.hidden = false;
+                saveBtn.hidden = true;
+                cancelBtn.hidden = true;
+            }
+        }
+
+        searchInput.addEventListener('input', () => {
+            const q = searchInput.value.trim().toLowerCase();
+            if (!q) { renderTable(allRooms); return; }
+            renderTable(allRooms.filter(r =>
+                (r.display_name || '').toLowerCase().includes(q) ||
+                (r.description || '').toLowerCase().includes(q) ||
+                r._id.toLowerCase().includes(q)
+            ));
+        });
+    </script>
+</body>
+</html>
