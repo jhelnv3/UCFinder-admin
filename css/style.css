@@ -22,6 +22,8 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+[hidden] { display: none !important; }
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background-color: var(--cream);
@@ -35,7 +37,34 @@ body {
 
 
 /* ================================================================
-   2. TOPBAR
+   2. LOGOS (brand icon + login logo)
+   ================================================================ */
+
+/* Topbar brand icon (dashboard, users, user-edit, rooms, schedule) */
+.brand-dot {
+    width: 40px;
+    height: 40px;
+    background-image: url("UCFinder-Photoroom.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    flex-shrink: 0;
+}
+
+/* Login card logo — larger, stacked above the text */
+.login-logo-dot {
+    width: 80px;
+    height: 80px;
+    background-image: url("UCFinder-Photoroom.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    flex-shrink: 0;
+}
+
+
+/* ================================================================
+   3. TOPBAR
    ================================================================ */
 .topbar {
     background-color: var(--yellow);
@@ -59,33 +88,13 @@ body {
     text-decoration: none;
 }
 
-.brand-dot {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background-color: var(--ink);
-}
-
 .topbar-right { display: flex; align-items: center; gap: 20px; }
-
-.admin-chip {
-    background-color: var(--cream);
-    padding: 10px 18px;
-    border-radius: 999px;
-    display: flex;
-    flex-direction: column;
-    line-height: 1.2;
-}
-.admin-chip .name { font-weight: 800; font-size: 14px; }
-.admin-chip .id { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
 
 
 /* ================================================================
-   2b. ADMIN DROPDOWN (topbar)
+   4. ADMIN DROPDOWN (topbar)
    ================================================================ */
-.admin-menu {
-    position: relative;
-}
+.admin-menu { position: relative; }
 
 .admin-chip {
     background-color: var(--cream);
@@ -120,9 +129,7 @@ body {
     transition: transform 0.18s ease;
 }
 
-.admin-menu.open .admin-chip .caret {
-    transform: rotate(180deg);
-}
+.admin-menu.open .admin-chip .caret { transform: rotate(180deg); }
 
 /* The floating dropdown panel */
 .admin-dropdown {
@@ -182,9 +189,7 @@ body {
 }
 
 .admin-dropdown a:hover,
-.admin-dropdown button:hover {
-    background-color: var(--row-bg);
-}
+.admin-dropdown button:hover { background-color: var(--row-bg); }
 
 .admin-dropdown .dropdown-divider {
     height: 1px;
@@ -192,12 +197,8 @@ body {
     margin: 6px 0;
 }
 
-.admin-dropdown .dropdown-item.danger {
-    color: var(--danger);
-}
-.admin-dropdown .dropdown-item.danger:hover {
-    background-color: #f5d4cc;
-}
+.admin-dropdown .dropdown-item.danger { color: var(--danger); }
+.admin-dropdown .dropdown-item.danger:hover { background-color: #f5d4cc; }
 
 .admin-dropdown .dropdown-item .item-icon {
     width: 18px;
@@ -205,8 +206,9 @@ body {
     font-size: 14px;
 }
 
+
 /* ================================================================
-   3. BUTTONS
+   5. BUTTONS
    ================================================================ */
 .btn {
     border: none;
@@ -240,7 +242,7 @@ body {
 
 
 /* ================================================================
-   4. CONTENT SHELL / PAGE TITLES
+   6. CONTENT SHELL / PAGE TITLES
    ================================================================ */
 .content {
     flex: 1;
@@ -270,7 +272,7 @@ body {
 
 
 /* ================================================================
-   5. LOGIN
+   7. LOGIN
    ================================================================ */
 .login-wrap {
     min-height: 100vh;
@@ -289,25 +291,20 @@ body {
     border: 1px solid var(--line);
 }
 
+/* Logo stacked on top of the wordmark, both centered */
 .login-logo {
     display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 12px;
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 800;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+    text-align: center;
 }
 
-.login-logo-dot {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background-color: var(--yellow);
-    border: 2px solid var(--ink);
-}
-
-.login-title { font-size: 26px; font-weight: 800; margin-bottom: 4px; }
-.login-sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 32px; }
+.login-title { font-size: 26px; font-weight: 800; margin-bottom: 4px; text-align: center; }
+.login-sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 32px; text-align: center; }
 
 .field { margin-bottom: 18px; }
 
@@ -352,7 +349,7 @@ body {
 
 
 /* ================================================================
-   6. DASHBOARD
+   8. DASHBOARD
    ================================================================ */
 .dash-grid {
     display: grid;
@@ -403,7 +400,7 @@ body {
 
 
 /* ================================================================
-   7. LISTS / TABLES / SEARCH
+   9. LISTS / TABLES / SEARCH
    ================================================================ */
 .list-header {
     display: flex;
@@ -537,7 +534,7 @@ tbody td {
 
 
 /* ================================================================
-   8. FORM CARD
+   10. FORM CARD
    ================================================================ */
 .form-card {
     background-color: var(--white);
@@ -624,7 +621,7 @@ tbody td {
 
 
 /* ================================================================
-   9. SECTION HEADINGS (in forms)
+   11. SECTION HEADINGS (in forms)
    ================================================================ */
 .section-heading {
     font-size: 14px;
@@ -642,7 +639,7 @@ tbody td {
 
 
 /* ================================================================
-   10. TOGGLE SWITCH (Admin flag)
+   12. TOGGLE SWITCH (Admin flag)
    ================================================================ */
 .toggle-row {
     display: flex;
@@ -702,6 +699,15 @@ tbody td {
     outline-offset: 2px;
 }
 
+/* Locked / disabled toggle */
+.switch input:disabled + .slider {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.switch input:disabled + .slider::before {
+    box-shadow: none;
+}
+
 .toggle-state {
     font-size: 14px;
     font-weight: 700;
@@ -711,9 +717,16 @@ tbody td {
 }
 .toggle-state.on { color: var(--ink); }
 
+.toggle-lock-note {
+    font-size: 12px;
+    color: var(--ink-mute);
+    font-weight: 600;
+    margin-left: 4px;
+}
+
 
 /* ================================================================
-   11. ROOMS — INLINE EDITING
+   13. ROOMS — INLINE EDITING
    ================================================================ */
 .room-id {
     font-variant-numeric: tabular-nums;
@@ -747,7 +760,7 @@ tbody td {
 
 
 /* ================================================================
-   12. SCHEDULE
+   14. SCHEDULE
    ================================================================ */
 .week-grid {
     display: grid;
@@ -822,7 +835,7 @@ tbody td {
 
 
 /* ================================================================
-   13. PAGINATION
+   15. PAGINATION
    ================================================================ */
 .pagination {
     display: flex;
