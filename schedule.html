@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>UCFinder Admin · Schedule</title>
-    <link rel="stylesheet" href="css/style.css">
     <link rel="icon" href="css/UCFinder-Photoroom.png">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="page">
@@ -37,9 +37,87 @@
         </header>
 
         <main class="content">
-            <a class="back-link" href="users.html">← Back to Users</a>
+            <a class="back-link" href="users.html" id="backLink">← Back to User</a>
+
             <h1 class="page-title">Weekly Schedule</h1>
-            <p class="page-sub">Coming soon — schedules will be wired to Firestore once the collection is set up.</p>
+            <p class="page-sub" id="scheduleSubtitle">Loading…</p>
+
+            <!-- Temporary notice -->
+            <div class="temp-notice">
+                <span class="temp-notice-icon">ℹ️</span>
+                <div>
+                    <strong>Temporary preview.</strong>
+                    This is a static design placeholder. Real schedule data will be added soon.
+                </div>
+            </div>
+
+            <!-- Static preview grid -->
+            <div class="week-grid">
+                <!-- MONDAY -->
+                <div class="day-column">
+                    <div class="day-header">Monday</div>
+                    <div class="class-block">
+                        <span class="subj">Data Structures</span>
+                        <span class="time">8:00 AM – 9:30 AM</span>
+                        <span class="room">Room 212</span>
+                    </div>
+                    <div class="class-block">
+                        <span class="subj">Discrete Math</span>
+                        <span class="time">10:00 AM – 11:30 AM</span>
+                        <span class="room">Room 305</span>
+                    </div>
+                </div>
+
+                <!-- TUESDAY -->
+                <div class="day-column">
+                    <div class="day-header">Tuesday</div>
+                    <div class="class-block">
+                        <span class="subj">Operating Systems</span>
+                        <span class="time">9:00 AM – 10:30 AM</span>
+                        <span class="room">Room 401</span>
+                    </div>
+                    <div class="class-block">
+                        <span class="subj">Physics Lab</span>
+                        <span class="time">1:00 PM – 3:00 PM</span>
+                        <span class="room">Lab 102</span>
+                    </div>
+                </div>
+
+                <!-- WEDNESDAY -->
+                <div class="day-column">
+                    <div class="day-header">Wednesday</div>
+                    <div class="class-block">
+                        <span class="subj">Software Engineering</span>
+                        <span class="time">8:00 AM – 9:30 AM</span>
+                        <span class="room">Room 212</span>
+                    </div>
+                </div>
+
+                <!-- THURSDAY -->
+                <div class="day-column">
+                    <div class="day-header">Thursday</div>
+                    <div class="class-block">
+                        <span class="subj">Networks</span>
+                        <span class="time">10:00 AM – 11:30 AM</span>
+                        <span class="room">Room 118</span>
+                    </div>
+                    <div class="class-block">
+                        <span class="subj">Ethics</span>
+                        <span class="time">2:00 PM – 3:30 PM</span>
+                        <span class="room">Room 220</span>
+                    </div>
+                </div>
+
+                <!-- FRIDAY -->
+                <div class="day-column">
+                    <div class="day-header">Friday</div>
+                    <div class="class-block">
+                        <span class="subj">Capstone</span>
+                        <span class="time">9:00 AM – 11:00 AM</span>
+                        <span class="room">Room 505</span>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -51,13 +129,47 @@
     <script src="js/dropdown.js"></script>
 
     <script>
-        window.requireAdmin(async (user, docId, data) => {
-            document.getElementById('adminName').textContent = data.name || user.email;
-            document.getElementById('adminId').textContent = data.id_number ? `ID ${data.id_number}` : '';
-            document.getElementById('adminMetaName').textContent = data.name || user.email;
+        const params = new URLSearchParams(window.location.search);
+        const userId = params.get('id');
+
+        window.requireAdmin(async (user, adminDocId, adminData) => {
+            // Admin chip
+            document.getElementById('adminName').textContent = adminData.name || user.email;
+            document.getElementById('adminId').textContent = adminData.id_number ? `ID ${adminData.id_number}` : '';
+            document.getElementById('adminMetaName').textContent = adminData.name || user.email;
             document.getElementById('adminMetaId').textContent =
-                `${data.id_number ? 'ID ' + data.id_number : ''}${data.role ? ' · ' + data.role : ''}`;
-            document.getElementById('editAccountLink').href = `user-edit.html?id=${docId}`;
+                `${adminData.id_number ? 'ID ' + adminData.id_number : ''}${adminData.role ? ' · ' + adminData.role : ''}`;
+            document.getElementById('editAccountLink').href = `user-edit.html?id=${adminDocId}`;
+
+            const backLink = document.getElementById('backLink');
+            const subtitle = document.getElementById('scheduleSubtitle');
+
+            if (!userId) {
+                // Opened without a specific user — route the back link to the users list
+                backLink.href = 'users.html';
+                backLink.textContent = '← Back to Users';
+                subtitle.textContent = 'No specific user selected.';
+                return;
+            }
+
+            // Point the back link at this user's edit page
+            backLink.href = `user-edit.html?id=${userId}`;
+
+            // Fetch the user so the subtitle shows the real name/ID
+            try {
+                const doc = await db.collection('users').doc(userId).get();
+                if (doc.exists) {
+                    const d = doc.data();
+                    const name = d.name || '(unnamed)';
+                    const idText = d.id_number ? `ID ${d.id_number}` : '';
+                    const roleText = d.role ? ` · Role: ${d.role}` : '';
+                    subtitle.textContent = `${name}${idText ? ' · ' + idText : ''}${roleText}`;
+                } else {
+                    subtitle.textContent = 'User not found.';
+                }
+            } catch (err) {
+                subtitle.textContent = '(could not load user)';
+            }
         });
     </script>
 </body>

@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>UCFinder Admin · Edit User</title>
-    <link rel="stylesheet" href="css/style.css">
     <link rel="icon" href="css/UCFinder-Photoroom.png">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="page">
@@ -106,26 +106,18 @@
                     <button type="submit" class="btn btn-primary" id="saveBtn">Save Changes</button>
                     <a class="btn btn-outline" href="users.html">Cancel</a>
                 </div>
+
+                <!-- Schedule shortcut — always visible on the edit page -->
+                <a class="schedule-link-card" href="schedule.html" id="scheduleLink">
+                    <div>
+                        <h4>Edit User Schedule</h4>
+                        <p>Manage this user's weekly class timetable.</p>
+                    </div>
+                    <span class="arrow">›</span>
+                </a>
             </form>
         </main>
     </div>
-
-    <style>
-        /* Locked toggle appearance */
-        .switch input:disabled + .slider {
-            opacity: 0.55;
-            cursor: not-allowed;
-        }
-        .switch input:disabled + .slider::before {
-            box-shadow: none;
-        }
-        .toggle-lock-note {
-            font-size: 12px;
-            color: #808080;
-            font-weight: 600;
-            margin-left: 4px;
-        }
-    </style>
 
     <script src="/__/firebase/10.8.0/firebase-app-compat.js"></script>
     <script src="/__/firebase/10.8.0/firebase-auth-compat.js"></script>
@@ -139,7 +131,6 @@
         const userId = params.get('id');
         const isCreate = !userId;
 
-        // Will be set once we know whether this is the logged-in admin's own doc.
         let isEditingSelf = false;
 
         const adminToggle = document.getElementById('is-admin');
@@ -174,7 +165,6 @@
                 `${adminData.id_number ? 'ID ' + adminData.id_number : ''}${adminData.role ? ' · ' + adminData.role : ''}`;
             document.getElementById('editAccountLink').href = `user-edit.html?id=${adminDocId}`;
 
-            // ---- Determine if we're editing the currently logged-in admin's own doc ----
             isEditingSelf = !isCreate && userId === adminDocId;
 
             if (isCreate) {
@@ -183,8 +173,17 @@
                 document.getElementById('createdAt').textContent = '(set on save)';
                 document.getElementById('lastActive').textContent = '(set on save)';
                 refreshAdminLabel();
+
+                // No saved schedule for a user that doesn't exist yet
+                const scheduleLink = document.getElementById('scheduleLink');
+                scheduleLink.href = '#';
+                scheduleLink.style.pointerEvents = 'none';
+                scheduleLink.style.opacity = '0.5';
                 return;
             }
+
+            // Point the schedule link to this user's schedule
+            document.getElementById('scheduleLink').href = `schedule.html?id=${userId}`;
 
             const doc = await db.collection('users').doc(userId).get();
             if (!doc.exists) {
@@ -208,14 +207,10 @@
             document.getElementById('createdAt').textContent = formatDate(d.created_at);
             document.getElementById('lastActive').textContent = formatDate(d.last_active);
 
-            // ---- Lock the Admin toggle when editing yourself ----
             if (isEditingSelf) {
                 adminToggle.disabled = true;
                 adminLockNote.style.display = 'inline';
 
-                // If for some reason the doc doesn't already have is_admin = true
-                // (shouldn't happen because requireAdmin passed), force it visually
-                // so the label reflects the safe state.
                 if (!adminToggle.checked) {
                     adminToggle.checked = true;
                     refreshAdminLabel();
@@ -236,9 +231,6 @@
                 last_active: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            // ---- Never include is_admin when editing yourself ----
-            // This protects against a bad actor re-enabling the disabled toggle
-            // via devtools, or against a form reset.
             if (!isEditingSelf) {
                 payload.is_admin = adminToggle.checked;
             }

@@ -854,3 +854,32 @@ tbody td {
     cursor: pointer;
 }
 .page-btn.active { background-color: var(--yellow); border-color: var(--yellow); }
+
+/* ================================================================
+   16. TEMPORARY NOTICE (schedule placeholder)
+   ================================================================ */
+.temp-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background-color: #f0f2f4;
+    border: 1px solid rgba(20, 20, 20, 0.12);
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    margin-bottom: 22px;
+    color: #4a4a4a;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.temp-notice strong {
+    color: #141414;
+    font-weight: 800;
+}
+
+.temp-notice-icon {
+    font-size: 18px;
+    line-height: 1.2;
+    flex-shrink: 0;
+}
